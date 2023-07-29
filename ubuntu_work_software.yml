@@ -1,0 +1,155 @@
+---
+- hosts: localhost
+  become: true
+  tasks:
+    
+    # `pip` and `ansible` will naturally be on the host machine in order to run
+    # this playbook, but if you want to setup another machine remotely from the
+    # current machine, it does not require ansible. It _does_ however require to
+    # be networked correctly and setup for SSH.
+    - name: update package list
+      apt:
+        update_cache: yes
+
+    - name: install pip
+      apt:
+        name: python3-pip
+
+    - name: install ansible
+      become: false
+      # python3 -m pip install --user ansible
+      ansible.builtin.pip:
+        name: ansible
+        extra_args: --user
+
+    - name: install chezmoi
+      become: false
+      ansible.builtin.shell: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+
+    - name: install i3
+      apt:
+        name: i3
+
+    - name: install git
+      apt:
+        name: git
+
+    - block:
+      - name: install docker prereqs
+        apt:
+          pkg:
+            - ca-certificates 
+            - curl 
+            - gnupg
+
+      - name: add docker gpg key
+        apt_key:
+          url: https://download.docker.com/linux/ubuntu/gpg
+          state: present
+
+      - name: register os codename
+        ansible.builtin.shell: . /etc/os-release && echo "$VERSION_CODENAME"
+        register: os_codename
+
+      - name: add docker repository
+        apt_repository:
+          repo: deb https://download.docker.com/linux/ubuntu {{ os_codename.stdout }} stable
+          state: present
+      
+      - name: install docker
+        apt:
+          pkg:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io
+            - docker-buildx-plugin
+            - docker-compose-plugin
+          update_cache: yes
+
+    - name: install tmux
+      apt:
+        name: tmux
+
+    - name: install vim
+      apt:
+        name: vim
+
+    - block:
+      - name: ensure vim directory exists
+        become: false
+        ansible.builtin.shell: mkdir -p ~/.vim/autoload
+
+      - name: add vim-plug
+        become: false
+        ansible.builtin.get_url:
+          url: https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+          dest: ~/.vim/autoload/plug.vim
+      
+      - name: install all plugs
+        become: false
+        ansible.builtin.shell: vi +'PlugInstall --sync' +qa
+
+    - name: install neomutt
+      apt:
+        name: neomutt
+
+    # can integrate into irssi?
+    # tg command? (telegram)
+    # discord?
+    # gitter?
+    # slack?
+    # matrix?
+    # set up playback module: https://wiki.znc.in/Playback
+    # set up/track pluggins
+    - name: install irssi
+      apt:
+        name: irssi
+
+    - name: install xclip
+      apt:
+        name: xclip
+
+    - name: install jq
+      apt:
+        name: jq
+
+    - name: install yq
+      ansible.builtin.get_url:
+        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        dest: /usr/bin/yq
+        mode: 0755
+
+    # and then install gron
+    #- name: install go
+    #  ansible.builtin.unarchive:
+    #    src: https://go.dev/dl/go1.20.6.linux-amd64.tar.gz
+    #    dest: /usr/local
+
+    - name: install google-chrome-stable
+      apt:
+        name: google-chrome-stable
+
+    - name: install libreoffice
+      apt:
+        name: libreoffice
+
+    - name: install inkscape
+      apt:
+        name: inkscape
+
+    - name: install gimp
+      apt:
+        name: gimp
+
+
+    
+
+
+    
+
+    #graphviz
+    #plantuml
+    #gist
+    #libre office
+    #inkscape
+    #gimp
